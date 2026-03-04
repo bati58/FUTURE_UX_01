@@ -1,245 +1,163 @@
+# SmileCare Dental Clinic - Fullstack Starter
 
-# SmileCare Dental Clinic - UI/UX Frontend
+Modern, responsive dental clinic website with:
 
-A modern, responsive dental clinic website focused on lead generation and appointment booking.
+- React + Vite frontend
+- Express + MongoDB backend
+- Real appointment submission API
 
-This project is the **frontend UI/UX implementation** (React + Vite + TypeScript) and is ready for later integration with a complete MERN stack backend (MongoDB Atlas, Express, Node.js).
+This is now a working fullstack base you can deploy publicly.
 
 ## Figma Source
 
-- Original design source:  
-  https://www.figma.com/design/jUAsUCBPTRQF8oolxNjDMs/Design-SmileCare-Website-UIUX
+- https://www.figma.com/design/jUAsUCBPTRQF8oolxNjDMs/Design-SmileCare-Website-UIUX
 
-## Project Goals
+## Stack
 
-- Build trust with a clean, medical-grade visual style
-- Drive conversions with repeated booking CTAs
-- Support desktop-first design with strong mobile UX
-- Provide service education through detail pages and FAQs
+- Frontend: React, TypeScript, Vite, Tailwind v4, React Router, shadcn/ui
+- Backend: Express, Mongoose, Zod, Helmet, CORS, Rate Limiting
+- Database: MongoDB Atlas
 
-## Current Scope (UI/UX Frontend)
+## Features
 
-Implemented pages and flows:
-
-- Homepage
-- Service detail pages (dynamic by service slug)
-- Contact / appointment page
-- About (founder profile + gallery)
-- Privacy Policy page
-- Global FAQ chatbot widget
-- Sticky mobile bottom CTA ("Book Now")
-
-## Tech Stack
-
-- React 18
-- TypeScript
-- Vite
-- React Router
-- Tailwind CSS v4
-- shadcn/ui primitives (Radix-based components)
-- Lucide icons
-- Sonner toast notifications
-
-## Key Features
-
-- Sticky header with desktop + mobile navigation
-- Services dropdown menu in navbar
-- Conversion-focused CTA placement across sections
-- Dynamic service pages from centralized data source
-- FAQ accordion on service detail pages
-- Contact form UI with toast feedback (mock submit)
-- Embedded Google Map + external map link
-- Founder profile and gallery integration
-- Footer quick links, service links, social links, emergency contact
-- Keyword-based FAQ chatbot for instant responses
+- Sticky header + responsive navigation
+- Services dropdown and dynamic service detail pages
+- Contact/appointment form connected to backend API
+- Founder profile + gallery
+- FAQ chatbot widget
+- Privacy policy page
+- Mobile sticky booking CTA
 
 ## Routes
 
-- `/` - Homepage
-- `/about` - Founder profile and gallery
-- `/privacy-policy` - Privacy policy content page
-- `/services/:serviceSlug` - Service detail page
-- `/contact` - Appointment / lead page
+- `/` Homepage
+- `/about` Founder page
+- `/privacy-policy` Privacy policy
+- `/services/:serviceSlug` Service details
+- `/contact` Appointment page
+
+## API Endpoints
+
+- `GET /api/health` health status
+- `POST /api/appointments` create appointment request
 
 ## Project Structure
 
 ```text
-src/
-  app/
-    App.tsx
-    routes.ts
-    components/
-      Layout.tsx
-      Header.tsx
-      Footer.tsx
-      MobileBookButton.tsx
-      FaqChatbot.tsx
-      figma/
-      ui/
-    pages/
-      Homepage.tsx
-      ServiceDetail.tsx
-      Contact.tsx
-      About.tsx
-      PrivacyPolicy.tsx
-    data/
-      services.ts
-      founder.ts
-  styles/
-    index.css
-    tailwind.css
-    theme.css
-    fonts.css
-public/
-  images/
+client/
+  src/
+    app/
+      components/
+      pages/
+      data/
+      lib/
+    styles/
+  public/
+  assets/
+  index.html
+  vite.config.ts
+server/
+  src/
+    config/
+    middleware/
+    models/
+    routes/
 ```
 
-## Getting Started
+## Environment Variables
 
-### Prerequisites
+### Frontend (`client/.env`)
 
-- Node.js 18+ (recommended 20+)
-- npm or pnpm
-
-### Install Dependencies
-
-Using npm:
+Copy from `client/.env.example`:
 
 ```bash
-npm install
+VITE_API_URL=http://localhost:5000/api
 ```
 
-Using pnpm:
+If omitted, frontend falls back to `/api` and uses Vite proxy in local dev.
+
+### Backend (`server/.env`)
+
+Copy from `server/.env.example`:
 
 ```bash
-pnpm install
+PORT=5000
+NODE_ENV=development
+MONGODB_URI=mongodb+srv://<username>:<password>@<cluster-url>/smilecare?retryWrites=true&w=majority
+CORS_ORIGIN=http://localhost:5173
 ```
 
-### Run Development Server
+## Local Run (Fullstack)
+
+### 1) Install frontend deps
 
 ```bash
-npm run dev
+npm --prefix client install
 ```
 
-Then open:
-
-- `http://localhost:5173`
-
-### Production Build
+### 2) Install backend deps
 
 ```bash
-npm run build
+npm --prefix server install
 ```
 
-### Preview Production Build
+### 3) Run backend
 
 ```bash
-npx vite preview
+npm --prefix server run dev
 ```
 
-## Branding and Content Customization
+### 4) Run frontend (new terminal)
 
-### 1) Logo
+```bash
+npm --prefix client run dev
+```
 
-Current logo file used in header/footer:
+Open:
 
-- `public/images/smilecare-logo.png`
+- Frontend: `http://localhost:5173`
+- API Health: `http://localhost:5000/api/health`
 
-Used in:
+## Build
 
-- `src/app/components/Header.tsx`
-- `src/app/components/Footer.tsx`
-
-### 2) Founder Profile + Gallery
-
-Update founder content and gallery list in:
-
-- `src/app/data/founder.ts`
-
-Local founder image files:
-
-- `public/images/founder-dr-adane-jano.jpg`
-- `public/images/founder-gallery-doctor.jpg`
-- `public/images/gallery-treatment-room.jpg`
-- `public/images/gallery-clinic-lounge.jpg`
-
-### 3) Services Content
-
-All service titles, summaries, hero images, benefits, and FAQs are centralized in:
-
-- `src/app/data/services.ts`
-
-### 4) Theme and Color System
-
-Core theme tokens and color variables:
-
-- `src/styles/theme.css`
-
-App stylesheet imports:
-
-- `src/styles/index.css`
-
-### 5) Contact Details and Map
-
-Update contact numbers, email, address, and map links in:
-
-- `src/app/pages/Contact.tsx`
-- `src/app/components/Footer.tsx`
-- `src/app/components/FaqChatbot.tsx`
-- `src/app/pages/ServiceDetail.tsx`
-
-## Offline Image Strategy
-
-Some images are loaded from external URLs (mainly Unsplash). If images do not appear offline:
-
-1. Download the image files manually.
-2. Place them in `public/images/`.
-3. Replace remote URLs with local paths like `/images/your-file.jpg` in:
-   - `src/app/pages/Homepage.tsx`
-   - `src/app/data/services.ts`
-   - `src/app/data/founder.ts`
-
-## Form and Chatbot Behavior (Important)
-
-- Appointment form currently performs a **mock submit** and only shows a success toast.
-- FAQ chatbot is **rule/keyword-based** and runs fully on the frontend.
-- No backend/API/database is connected yet.
-
-## Next Step: MERN Fullstack Integration Plan
-
-Suggested implementation path:
-
-1. Create Express API (`/api/appointments`, `/api/contact`, `/api/faq`).
-2. Connect MongoDB Atlas and define schemas for appointments, leads, and FAQ logs.
-3. Add server-side validation and sanitization.
-4. Replace mock form submit with real API call from `Contact.tsx`.
-5. Add admin dashboard for appointment management.
-6. Add email/SMS notification pipeline for booking confirmations.
-
-## Troubleshooting
-
-- If changes are not visible after edits, hard refresh browser: `Ctrl + F5`.
-- If map embed fails, verify the map provider allows iframe embedding.
-- If IDE shows CSS warnings in Tailwind directives, ensure the project is opened with Tailwind-aware extensions and dependencies installed.
+```bash
+npm --prefix client run build
+```
 
 ## Scripts
 
-- `npm run dev` - Start dev server
-- `npm run build` - Build production bundle
+- `npm run install:client` install frontend deps
+- `npm run install:server` install backend deps
+- `npm run dev:client` start frontend dev server
+- `npm run build:client` build frontend
+- `npm run dev:server` start backend server
+- `npm run start:server` start backend server
+
+## Key Config Files
+
+- Frontend API client: `client/src/app/lib/api.ts`
+- Contact form submit: `client/src/app/pages/Contact.tsx`
+- Vite API proxy: `client/vite.config.ts`
+- Backend entry: `server/src/index.js`
+- Appointment model: `server/src/models/Appointment.js`
+- Appointment route: `server/src/routes/appointments.js`
+
+## Deployment Path (Public)
+
+1. Deploy backend (`server/`) to Render Web Service.
+2. Add Atlas `MONGODB_URI` and production `CORS_ORIGIN`.
+3. Deploy frontend to Vercel or Render Static Site.
+4. Set frontend `VITE_API_URL` to backend public API URL.
+5. Add custom domain + HTTPS.
+
+## Content Customization
+
+- Services content: `client/src/app/data/services.ts`
+- Founder content/gallery: `client/src/app/data/founder.ts`
+- Brand logo: `client/public/images/smilecare-logo.png`
 
 ## Attribution
 
-This project includes:
-
-- shadcn/ui components (MIT): https://ui.shadcn.com/
-- Unsplash images: https://unsplash.com/license
-
-See also:
-
-- `ATTRIBUTIONS.md`
-
-## License
-
-This project is for SmileCare Dental Clinic UI/UX development.  
-Define your preferred project license before public distribution.
-  
+- shadcn/ui (MIT): https://ui.shadcn.com/
+- Unsplash license: https://unsplash.com/license
+- More details: `ATTRIBUTIONS.md`

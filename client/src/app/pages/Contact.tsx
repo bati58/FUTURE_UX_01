@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -15,13 +15,53 @@ import { Phone, Mail, MapPin, Clock, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import { founderProfile } from "../data/founder";
+import { serviceDetails } from "../data/services";
+import { createAppointment } from "../lib/api";
+
+type AppointmentFormState = {
+  fullName: string;
+  phone: string;
+  email: string;
+  service: string;
+  date: string;
+  message: string;
+};
+
+type AppointmentFormErrors = Partial<Record<keyof AppointmentFormState, string>>;
+
+const fullNamePattern = /^[A-Za-z][A-Za-z' -]{1,119}$/;
+const internationalPhonePattern = /^\+?[1-9]\d{7,14}$/;
+const ethiopianLocalPattern = /^09\d{8}$/;
+const ethiopianIntlNoPlusPattern = /^2519\d{8}$/;
+
+function normalizePhone(phone: string) {
+  let cleaned = phone.trim().replace(/[^\d+]/g, "");
+
+  if (cleaned.startsWith("00")) {
+    cleaned = `+${cleaned.slice(2)}`;
+  }
+
+  if (ethiopianLocalPattern.test(cleaned)) {
+    return `+251${cleaned.slice(1)}`;
+  }
+
+  if (ethiopianIntlNoPlusPattern.test(cleaned)) {
+    return `+${cleaned}`;
+  }
+
+  return cleaned;
+}
+
+function isValidPhone(phone: string) {
+  return internationalPhonePattern.test(normalizePhone(phone));
+}
 
 export function Contact() {
   const clinicMapUrl =
     "https://www.google.com/maps/place/Smile+Speciality+Dental+Center/@8.991587,38.7765053,17z/data=!3m1!4b1!4m6!3m5!1s0x164b85fbef16a0a9:0xdcd8e8302a116850!8m2!3d8.9915817!4d38.7790802!16s%2Fg%2F11szf0w9_s?entry=ttu&g_ep=EgoyMDI2MDIyNS4wIKXMDSoASAFQAw%3D%3D";
   const appointmentHeroBg = "/images/book-appointment-bg.jpg";
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<AppointmentFormState>({
     fullName: "",
     phone: "",
     email: "",
@@ -29,19 +69,114 @@ export function Contact() {
     date: "",
     message: "",
   });
+  const [formErrors, setFormErrors] = useState<AppointmentFormErrors>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const allowedServices = useMemo(
+    () => new Set([...serviceDetails.map((service) => service.slug), "general-consultation"]),
+    [],
+  );
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const validateForm = (data: AppointmentFormState): AppointmentFormErrors => {
+    const errors: AppointmentFormErrors = {};
+    const fullName = data.fullName.trim();
+    const normalizedPhone = normalizePhone(data.phone);
+    const email = data.email.trim();
+    const message = data.message.trim();
+    const preferredDate = new Date(data.date);
+
+    if (!fullName) {
+      errors.fullName = "Full name is required.";
+    } else if (fullName.length < 2) {
+      errors.fullName = "Full name must be at least 2 characters.";
+    } else if (fullName.length > 120) {
+      errors.fullName = "Full name is too long.";
+    } else if (!fullNamePattern.test(fullName)) {
+      errors.fullName =
+        "Use letters, spaces, apostrophes, and hyphens only.";
+    }
+
+    if (!normalizedPhone) {
+      errors.phone = "Phone number is required.";
+    } else if (!isValidPhone(normalizedPhone)) {
+      errors.phone =
+        "Enter a valid phone number (supports 09..., +2519..., or international formats).";
+    }
+
+    if (!email) {
+      errors.email = "Email is required.";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      errors.email = "Enter a valid email address.";
+    }
+
+    if (!data.service) {
+      errors.service = "Please select a service.";
+    } else if (!allowedServices.has(data.service)) {
+      errors.service = "Please choose a valid service option.";
+    }
+
+    if (!data.date) {
+      errors.date = "Preferred date is required.";
+    } else if (Number.isNaN(preferredDate.getTime())) {
+      errors.date = "Preferred date must be valid.";
+    } else {
+      preferredDate.setHours(0, 0, 0, 0);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (preferredDate < today) {
+        errors.date = "Preferred date cannot be in the past.";
+      }
+    }
+
+    if (message.length > 1000) {
+      errors.message = "Message cannot exceed 1000 characters.";
+    }
+
+    return errors;
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // Mock form submission
-    toast.success("Appointment request submitted! We'll contact you soon to confirm.");
-    setFormData({
-      fullName: "",
-      phone: "",
-      email: "",
-      service: "",
-      date: "",
-      message: "",
-    });
+
+    const errors = validateForm(formData);
+    setFormErrors(errors);
+
+    if (Object.keys(errors).length > 0) {
+      toast.error("Please correct the form fields and try again.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      await createAppointment({
+        fullName: formData.fullName.trim(),
+        phone: normalizePhone(formData.phone),
+        email: formData.email.trim().toLowerCase(),
+        service: formData.service,
+        preferredDate: formData.date,
+        message: formData.message.trim(),
+      });
+
+      toast.success("Appointment request submitted! We'll contact you soon to confirm.");
+
+      setFormData({
+        fullName: "",
+        phone: "",
+        email: "",
+        service: "",
+        date: "",
+        message: "",
+      });
+      setFormErrors({});
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Could not submit your request. Please try again.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -89,12 +224,19 @@ export function Contact() {
                       type="text"
                       placeholder="Adane Jano"
                       required
+                      aria-invalid={Boolean(formErrors.fullName)}
                       value={formData.fullName}
-                      onChange={(e) =>
-                        setFormData({ ...formData, fullName: e.target.value })
-                      }
+                      onChange={(e) => {
+                        setFormData({ ...formData, fullName: e.target.value });
+                        if (formErrors.fullName) {
+                          setFormErrors((prev) => ({ ...prev, fullName: undefined }));
+                        }
+                      }}
                       className="h-12 border-gray-300 focus:border-[#0f6cbf] focus:ring-[#0f6cbf]"
                     />
+                    {formErrors.fullName ? (
+                      <p className="text-sm text-red-600">{formErrors.fullName}</p>
+                    ) : null}
                   </div>
 
                   {/* Phone & Email */}
@@ -106,12 +248,19 @@ export function Contact() {
                         type="tel"
                         placeholder="+251 96 570 1208"
                         required
+                        aria-invalid={Boolean(formErrors.phone)}
                         value={formData.phone}
-                        onChange={(e) =>
-                          setFormData({ ...formData, phone: e.target.value })
-                        }
+                        onChange={(e) => {
+                          setFormData({ ...formData, phone: e.target.value });
+                          if (formErrors.phone) {
+                            setFormErrors((prev) => ({ ...prev, phone: undefined }));
+                          }
+                        }}
                         className="h-12 border-gray-300 focus:border-[#0f6cbf] focus:ring-[#0f6cbf]"
                       />
+                      {formErrors.phone ? (
+                        <p className="text-sm text-red-600">{formErrors.phone}</p>
+                      ) : null}
                     </div>
 
                     <div className="space-y-2">
@@ -121,12 +270,19 @@ export function Contact() {
                         type="email"
                         placeholder="adane@example.com"
                         required
+                        aria-invalid={Boolean(formErrors.email)}
                         value={formData.email}
-                        onChange={(e) =>
-                          setFormData({ ...formData, email: e.target.value })
-                        }
+                        onChange={(e) => {
+                          setFormData({ ...formData, email: e.target.value });
+                          if (formErrors.email) {
+                            setFormErrors((prev) => ({ ...prev, email: undefined }));
+                          }
+                        }}
                         className="h-12 border-gray-300 focus:border-[#0f6cbf] focus:ring-[#0f6cbf]"
                       />
+                      {formErrors.email ? (
+                        <p className="text-sm text-red-600">{formErrors.email}</p>
+                      ) : null}
                     </div>
                   </div>
 
@@ -135,24 +291,30 @@ export function Contact() {
                     <Label htmlFor="service">Select Service *</Label>
                     <Select
                       value={formData.service}
-                      onValueChange={(value) =>
-                        setFormData({ ...formData, service: value })
-                      }
-                      required
+                      onValueChange={(value) => {
+                        setFormData({ ...formData, service: value });
+                        if (formErrors.service) {
+                          setFormErrors((prev) => ({ ...prev, service: undefined }));
+                        }
+                      }}
                     >
                       <SelectTrigger className="h-12 border-gray-300 focus:border-[#0f6cbf] focus:ring-[#0f6cbf]">
                         <SelectValue placeholder="Choose a service" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="general">General Dentistry</SelectItem>
-                        <SelectItem value="cosmetic">Cosmetic Dentistry</SelectItem>
-                        <SelectItem value="whitening">Teeth Whitening</SelectItem>
-                        <SelectItem value="pediatric">Pediatric Dentistry</SelectItem>
-                        <SelectItem value="root-canal">Root Canal Treatment</SelectItem>
-                        <SelectItem value="implants">Dental Implants</SelectItem>
-                        <SelectItem value="consultation">General Consultation</SelectItem>
+                        {serviceDetails.map((service) => (
+                          <SelectItem key={service.slug} value={service.slug}>
+                            {service.title}
+                          </SelectItem>
+                        ))}
+                        <SelectItem value="general-consultation">
+                          General Consultation
+                        </SelectItem>
                       </SelectContent>
                     </Select>
+                    {formErrors.service ? (
+                      <p className="text-sm text-red-600">{formErrors.service}</p>
+                    ) : null}
                   </div>
 
                   {/* Preferred Date */}
@@ -162,13 +324,20 @@ export function Contact() {
                       id="date"
                       type="date"
                       required
+                      aria-invalid={Boolean(formErrors.date)}
                       value={formData.date}
-                      onChange={(e) =>
-                        setFormData({ ...formData, date: e.target.value })
-                      }
+                      onChange={(e) => {
+                        setFormData({ ...formData, date: e.target.value });
+                        if (formErrors.date) {
+                          setFormErrors((prev) => ({ ...prev, date: undefined }));
+                        }
+                      }}
                       className="h-12 border-gray-300 focus:border-[#0f6cbf] focus:ring-[#0f6cbf]"
                       min={new Date().toISOString().split("T")[0]}
                     />
+                    {formErrors.date ? (
+                      <p className="text-sm text-red-600">{formErrors.date}</p>
+                    ) : null}
                   </div>
 
                   {/* Message */}
@@ -178,20 +347,31 @@ export function Contact() {
                       id="message"
                       placeholder="Tell us about your dental concerns or questions..."
                       rows={4}
+                      aria-invalid={Boolean(formErrors.message)}
                       value={formData.message}
-                      onChange={(e) =>
-                        setFormData({ ...formData, message: e.target.value })
-                      }
+                      onChange={(e) => {
+                        setFormData({ ...formData, message: e.target.value });
+                        if (formErrors.message) {
+                          setFormErrors((prev) => ({ ...prev, message: undefined }));
+                        }
+                      }}
                       className="border-gray-300 focus:border-[#0f6cbf] focus:ring-[#0f6cbf]"
                     />
+                    <p className="text-xs text-gray-500">
+                      {formData.message.length}/1000 characters
+                    </p>
+                    {formErrors.message ? (
+                      <p className="text-sm text-red-600">{formErrors.message}</p>
+                    ) : null}
                   </div>
 
                   {/* Submit Button */}
                   <Button
                     type="submit"
-                    className="w-full bg-[#0f6cbf] hover:bg-[#0b4f8a] text-white rounded-full h-14 text-lg"
+                    disabled={isSubmitting}
+                    className="w-full bg-[#0f6cbf] hover:bg-[#0b4f8a] disabled:bg-[#0f6cbf]/70 disabled:cursor-not-allowed text-white rounded-full h-14 text-lg"
                   >
-                    Submit Appointment Request
+                    {isSubmitting ? "Submitting..." : "Submit Appointment Request"}
                   </Button>
 
                   <p className="text-sm text-gray-600 text-center">

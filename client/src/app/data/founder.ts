@@ -24,7 +24,7 @@ export const founderProfile = {
     {
       src: "/images/founder-gallery-doctor.jpg",
       alt: "Doctor portrait for SmileCare founder gallery",
-      caption: "Clinical leadership portrait",
+      caption: "Dr. Adane Jano - Founder & Lead Dentist,Clinical leadership portrait",
     },
     {
       src: "https://images.unsplash.com/photo-1643660527072-9c702932f606?auto=format&fit=crop&w=1200&q=80",
@@ -45,6 +45,21 @@ export const founderProfile = {
       src: "/images/gallery-clinic-lounge.jpg",
       alt: "Clinic reception and waiting lounge interior",
       caption: "Warm and welcoming clinic lounge",
+    },
+    {
+      src: "/images/founder-gallery.png",
+      alt: "Clinic reception and waiting lounge interior",
+      caption: "Dr. Adane Jano - Founder & Lead Dentist",
+    },
+    {
+      src: "/images/foundergallery.png",
+      alt: "Clinic reception and waiting lounge interior",
+      caption: "Dr. Adane Jano - Founder & Lead Dentist",
+    },
+    {
+      src: "/images/cleanenv.png",
+      alt: "Clinic reception and waiting lounge interior",
+      caption: "a comfortable clinic environment",
     },
   ],
 } as const;

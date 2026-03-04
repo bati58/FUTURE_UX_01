@@ -15,6 +15,7 @@ Thumbs.db
 *.swo
 coverage/
 *.tsbuildinfo
+.vite/
 
 # Optional local docs/output
 *.tmp
