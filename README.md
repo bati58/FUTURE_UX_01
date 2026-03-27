@@ -1,6 +1,7 @@
 # FUTURE_UX_01
 
-🦷 Smile Specialty Dental Clinic – High-Conversion Website Redesign
+🦷 Smile Specialty Dental Clinic
+
 📌 Project Overview
 
 This project is a UI/UX redesign of a local service business website for Smile Specialty Dental Clinic, focused on improving lead generation and conversion rates.
