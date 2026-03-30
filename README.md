@@ -133,7 +133,7 @@ To design a **conversion-optimized website UI** that:
 ![Services](./service%20page%20Desktop.png)
 
 ### About Page
-![About](./About%20(1).png)
+![About](./About.png)
 
 ### Appointment Page
 ![Booking](./book%20appointment%20desktop.png)
